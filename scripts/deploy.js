@@ -1,15 +1,20 @@
 const hre = require("hardhat");
 
 async function main() {
-  console.log("Deploying AssetDAO...");
+  // 1. Enterprise Token
+  const ENT = await hre.ethers.getContractFactory("EnterpriseToken");
+  const ent = await ENT.deploy();
+  await ent.waitForDeployment();
+  console.log("ENT_TOKEN_ADDRESS:", await ent.getAddress());
 
-  const AssetDAO = await hre.ethers.getContractFactory("AssetDAO");
-  // 0x0... address ki jagah hum filhal dummy address de rahe hain
-  const dao = await AssetDAO.deploy("0x0000000000000000000000000000000000000000");
+  // 2. Asset Registry
+  const Registry = await hre.ethers.getContractFactory("AssetRegistry");
+  const registry = await Registry.deploy();
+  await registry.waitForDeployment();
+  console.log("REGISTRY_ADDRESS:", await registry.getAddress());
 
-  await dao.waitForDeployment();
-
-  console.log("AssetDAO deployed to:", await dao.getAddress());
+  // Pehle se deployed DAO address hum yahan note kar chuke hain
+  console.log("DAO_ADDRESS: 0x056263C13686a1897c710cCCaEd2E8754160CA5a");
 }
 
 main().catch((error) => {
