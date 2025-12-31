@@ -1,32 +1,24 @@
 async function buyENT() {
-    if (!walletAddress) return alert("Pehle Wallet Connect Karein!");
+    if (!walletAddress) return;
     try {
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
       
-      const amountInWei = ethers.parseUnits(usdcToPay.toString(), 18);
+      // Ye line ensure karegi ke poore 10 USDC (18 decimals ke saath) jayein
+      const amountToSend = ethers.parseUnits(usdcAmount.toString(), 18);
       
-      alert(`Confirm karein: ${usdcToPay} USDC ka transfer`);
-
-      // MANUAL GAS LIMIT ADDED
       const tx = await signer.sendTransaction({
         to: MY_WALLET,
-        value: amountInWei,
-        gasLimit: 100000 // Manual gas limit taake error na aaye
+        value: amountToSend, // Ab ye sirf point wala number nahi, pura digit bhejega
       });
 
-      alert("Transaction Sent! Processing...");
+      alert(`Confirm karein: ${usdcAmount} USDC transfer ho rahe hain.`);
       await tx.wait();
       
-      alert("Success! Purchase Complete.");
+      alert("USDC Deducted! Ab ENT balance check karein.");
       checkBalance(walletAddress);
     } catch (err) {
+      alert("Transaction fail ho gayi!");
       console.error(err);
-      // Detail error check
-      if (err.code === "INSUFFICIENT_FUNDS") {
-        alert("Error: Aapke paas kafi USDC nahi hain (Gas fees shamil karke).");
-      } else {
-        alert("Transaction Failed! MetaMask mein 'Gas' check karein ya balance refresh karein.");
-      }
     }
   }
