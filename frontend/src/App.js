@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 
-// ADDRESSES
+// AAPKE ADDRESSES
 const ENT_CONTRACT = "0x8A42b7C9fa082D38d4bD212bd2D5B76465b01053";
 const MY_WALLET = "0x0E6d470bbDd9CE63e1B506E2A040604F9EC97bd4";
 
@@ -9,16 +9,25 @@ function App() {
   const [walletAddress, setWalletAddress] = useState("");
   const [entBalance, setEntBalance] = useState("0");
 
-  // Balance Check Karne ka Function
+  // ASLI BALANCE FETCH LOGIC
   async function checkBalance(address) {
+    if (!address) return;
     try {
       const provider = new ethers.BrowserProvider(window.ethereum);
-      const abi = ["function balanceOf(address) view returns (uint256)"];
+      const abi = [
+        "function balanceOf(address) view returns (uint256)",
+        "function decimals() view returns (uint8)"
+      ];
       const contract = new ethers.Contract(ENT_CONTRACT, abi, provider);
-      const bal = await contract.balanceOf(address);
-      setEntBalance(ethers.formatUnits(bal, 18));
+      
+      const [rawBalance, decimals] = await Promise.all([
+        contract.balanceOf(address),
+        contract.decimals()
+      ]);
+
+      setEntBalance(ethers.formatUnits(rawBalance, decimals));
     } catch (err) {
-      console.log("Balance check failed");
+      console.error("Balance fetch error:", err);
     }
   }
 
@@ -27,17 +36,17 @@ function App() {
       try {
         const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
         setWalletAddress(accounts[0]);
-        checkBalance(accounts[0]); // Connect hote hi balance check karega
+        checkBalance(accounts[0]);
       } catch (error) {
-        alert("Connection reject kar di gayi.");
+        alert("Connection rejected.");
       }
     } else {
-      alert("MetaMask App ke browser mein kholien!");
+      alert("Please use MetaMask browser!");
     }
   }
 
   async function buyENT() {
-    if (!walletAddress) return alert("Pehle wallet connect karein!");
+    if (!walletAddress) return alert("Connect wallet first!");
     try {
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
@@ -47,10 +56,10 @@ function App() {
         value: ethers.parseEther("0.001") 
       });
       
-      alert("Transaction Sent! Wait for confirmation.");
+      alert("Transaction Sent! Waiting for confirmation...");
       await tx.wait();
-      alert("ENT Purchase Successful!");
-      checkBalance(walletAddress); // Khareedne ke baad balance update karega
+      alert("Purchase Successful!");
+      checkBalance(walletAddress); // Khareedne ke baad foran balance update
     } catch (err) {
       alert("Transaction failed!");
     }
@@ -75,10 +84,10 @@ function App() {
           <div style={glassCard}>
             <h3 style={{color: '#10b981'}}>Welcome Developer! ✅</h3>
             
-            {/* YE RAHI AAPKI BALANCE WALI LINE */}
+            {/* BALANCE DISPLAY BOX */}
             <div style={balanceBox}>
-              <p style={{margin: 0, fontSize: '0.9rem', color: '#94a3b8'}}>CURRENT HOLDINGS</p>
-              <h2 style={{margin: '5px 0', color: '#38bdf8'}}>{entBalance} ENT</h2>
+              <p style={{margin: 0, fontSize: '0.9rem', color: '#94a3b8'}}>YOUR ENT BALANCE</p>
+              <h1 style={{margin: '10px 0', color: '#38bdf8'}}>{entBalance} ENT</h1>
             </div>
 
             <p style={{fontSize: '0.8rem', color: '#94a3b8'}}>{walletAddress}</p>
@@ -99,7 +108,7 @@ function App() {
 const btnStyle = { background: '#38bdf8', border: 'none', padding: '10px 20px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' };
 const connectedStyle = { ...btnStyle, background: '#10b981', color: '#fff' };
 const glassCard = { background: '#0f172a', padding: '40px', borderRadius: '16px', border: '1px solid #1e293b' };
-const balanceBox = { background: '#1e293b', padding: '15px', borderRadius: '10px', margin: '20px 0', border: '1px dashed #38bdf8' };
+const balanceBox = { background: '#1e293b', padding: '20px', borderRadius: '12px', margin: '20px 0', border: '1px solid #38bdf8' };
 const bigBtn = { background: '#38bdf8', border: 'none', padding: '15px 40px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' };
 const actionBtn = { background: '#10b981', color: 'white', border: 'none', padding: '15px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' };
 const actionBtnSecondary = { ...actionBtn, background: '#3b82f6' };
