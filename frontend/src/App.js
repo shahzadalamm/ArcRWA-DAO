@@ -21,17 +21,15 @@ function App() {
     }
   }
 
-  // ASLI ENT PURCHASE LOGIC (TRANSACTION POPUP)
   async function buyENT() {
     if (!walletAddress) return alert("Pehle wallet connect karein!");
     try {
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
       
-      // Ye transaction MetaMask ka popup trigger karegi
       const tx = await signer.sendTransaction({
         to: MY_WALLET,
-        value: ethers.parseEther("0.001") // Testing ke liye choti amount
+        value: ethers.parseEther("0.001") 
       });
       
       alert("Transaction Sent! ArcScan par check karein.");
@@ -55,7 +53,6 @@ function App() {
         {!walletAddress ? (
           <div style={glassCard}>
             <h1>Portal Locked 🔒</h1>
-            <p>Connect your Arc wallet to access the hub.</p>
             <button onClick={connectWallet} style={bigBtn}>UNLOCK PORTAL</button>
           </div>
         ) : (
@@ -74,7 +71,6 @@ function App() {
   );
 }
 
-// STYLING
 const btnStyle = { background: '#38bdf8', border: 'none', padding: '10px 20px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' };
 const connectedStyle = { ...btnStyle, background: '#10b981', color: '#fff' };
 const glassCard = { background: '#0f172a', padding: '40px', borderRadius: '16px', border: '1px solid #1e293b' };
