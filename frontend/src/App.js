@@ -1,117 +1,85 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { ethers } from 'ethers';
 
-// YOUR ACTUAL CONTRACT ADDRESS
+// CONTRACT CONFIG
 const ENT_CONTRACT_ADDRESS = "0x8A42b7C9fa082D38d4bD212bd2D5B76465b01053";
-const TREASURY_WALLET = "0x0E6d470bbDd9CE63e1B506E2A040604F9EC97bd4";
 
 function App() {
   const [walletAddress, setWalletAddress] = useState("");
   const [entBalance, setEntBalance] = useState("0.00");
   const [isProcessing, setIsProcessing] = useState(false);
-  const [amount, setAmount] = useState(10);
 
-  // This function ONLY shows what is permanently saved on the Blockchain
-  async function fetchBlockchainData(address) {
-    if (!address) return;
+  // Is function se hum direct blockchain ka asli data read karte hain
+  async function syncBalance(address) {
     try {
       const provider = new ethers.BrowserProvider(window.ethereum);
       const abi = ["function balanceOf(address) view returns (uint256)"];
       const contract = new ethers.Contract(ENT_CONTRACT_ADDRESS, abi, provider);
-      
       const balance = await contract.balanceOf(address);
-      // Converts from Wei to readable units (18 decimals)
       setEntBalance(ethers.formatUnits(balance, 18));
-    } catch (error) {
-      console.error("Sync Error:", error);
-    }
+    } catch (e) { console.error("Sync failed"); }
   }
 
   async function connectWallet() {
     if (window.ethereum) {
       const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
       setWalletAddress(accounts[0]);
-      fetchBlockchainData(accounts[0]);
+      syncBalance(accounts[0]);
     }
   }
 
-  // REAL TRANSACTION LOGIC
-  async function executePurchase() {
-    if (!walletAddress) return alert("Please connect wallet!");
-
+  // ASLI TRANSACTION: Jo actually balance change karegi
+  async function buyTokens() {
+    if (!walletAddress) return alert("Connect Wallet!");
     try {
       setIsProcessing(true);
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
-      
-      // Sending 10 USDC (Native Gas Token on Arc)
-      const txValue = ethers.parseEther(amount.toString());
 
+      // IMPORTANT: Hum "Value" bhej rahe hain 10 USDC ki
       const tx = await signer.sendTransaction({
-        to: TREASURY_WALLET,
-        value: txValue,
-        gasLimit: 150000 
+        to: ENT_CONTRACT_ADDRESS, // Direct contract ko paisay bhejein
+        value: ethers.parseEther("10.0"), // Poore 10 USDC
+        gasLimit: 150000
       });
 
-      alert("Transaction sent! Waiting for Block Confirmation...");
-      await tx.wait(); // This waits for the blockchain to record the transaction
+      alert("Transaction Sent! Waiting for Blockchain to confirm...");
+      await tx.wait(); // Yahan rukanay se hi data save hota hai
       
-      alert("Payment Successful! Re-syncing balance from Blockchain...");
-      
-      // We wait for the indexer to catch up, then fetch real data
-      setTimeout(() => fetchBlockchainData(walletAddress), 5000);
-
-    } catch (error) {
-      alert("Transaction failed! Please check your balance.");
-      console.error(error);
+      alert("Success! Re-syncing your permanent balance...");
+      setTimeout(() => syncBalance(walletAddress), 5000);
+    } catch (err) {
+      alert("Transaction Failed! Check if you have enough balance.");
     } finally {
       setIsProcessing(false);
     }
   }
 
   return (
-    <div style={styles.container}>
-      <nav style={styles.nav}>
-        <h2 style={{color: '#38bdf8'}}>ARC <span style={{color: '#fff'}}>REAL-WORLD ASSETS</span></h2>
-        <button onClick={connectWallet} style={styles.btn}>
-          {walletAddress ? `Wallet Connected` : "Connect Wallet"}
+    <div style={{ background: '#020617', color: 'white', minHeight: '100vh', textAlign: 'center', fontFamily: 'sans-serif' }}>
+      <nav style={{ padding: '20px', background: '#0f172a', display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #1e293b' }}>
+        <h2 style={{color: '#38bdf8'}}>ARC <span style={{color: '#fff'}}>RWA HUB</span></h2>
+        <button onClick={connectWallet} style={{background: '#38bdf8', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: 'bold'}}>
+          {walletAddress ? "Connected" : "Connect Wallet"}
         </button>
       </nav>
 
-      <div style={styles.card}>
-        <p style={{color: '#94a3b8', fontSize: '0.9rem'}}>PERMANENT ON-CHAIN BALANCE</p>
-        <h1 style={{color: '#38bdf8', fontSize: '3.5rem'}}>{entBalance} ENT</h1>
+      <div style={{ maxWidth: '400px', margin: '60px auto', background: '#0f172a', padding: '40px', borderRadius: '25px', border: '1px solid #1e293b' }}>
+        <p style={{color: '#94a3b8', fontSize: '0.8rem'}}>BLOCKCHAIN VERIFIED BALANCE</p>
+        <h1 style={{color: '#38bdf8', fontSize: '3.5rem', margin: '10px 0'}}>{entBalance}</h1>
         
         {walletAddress && (
-          <div style={{marginTop: '30px'}}>
-            <input 
-              type="number" 
-              value={amount} 
-              onChange={(e) => setAmount(e.target.value)}
-              style={styles.input}
-            />
-            <button 
-              onClick={executePurchase} 
-              disabled={isProcessing}
-              style={isProcessing ? styles.disabledBtn : styles.actionBtn}
-            >
-              {isProcessing ? "COMMITTING TO BLOCKCHAIN..." : `PURCHASE ENT`}
-            </button>
-          </div>
+          <button 
+            onClick={buyTokens} 
+            disabled={isProcessing}
+            style={{ width: '100%', padding: '15px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '12px', fontWeight: 'bold', marginTop: '20px', cursor: 'pointer' }}
+          >
+            {isProcessing ? "COMMITTING TO CHAIN..." : "PURCHASE 100 ENT (10 USDC)"}
+          </button>
         )}
       </div>
     </div>
   );
 }
-
-const styles = {
-  container: { background: '#020617', color: 'white', minHeight: '100vh', textAlign: 'center', fontFamily: 'Arial, sans-serif' },
-  nav: { padding: '20px 40px', background: '#0f172a', display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #1e293b' },
-  card: { maxWidth: '450px', margin: '60px auto', background: '#0f172a', padding: '40px', borderRadius: '30px', border: '1px solid #1e293b' },
-  input: { background: '#1e293b', border: '1px solid #334155', color: 'white', padding: '15px', borderRadius: '12px', width: '80%', textAlign: 'center', marginBottom: '15px', fontSize: '1.2rem' },
-  btn: { background: '#38bdf8', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' },
-  actionBtn: { background: 'linear-gradient(135deg, #2563eb, #38bdf8)', color: 'white', border: 'none', padding: '16px', borderRadius: '14px', width: '100%', fontWeight: 'bold', cursor: 'pointer' },
-  disabledBtn: { background: '#334155', color: '#94a3b8', padding: '16px', borderRadius: '14px', width: '100%', cursor: 'not-allowed' }
-};
 
 export default App;
